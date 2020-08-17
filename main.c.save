@@ -1,0 +1,90 @@
+#include  "msp430.h"
+#define   EN12    BIT1
+#define   A1EN    BIT2
+#define   A2EN    BIT4
+#define   BEEP    BIT7
+//#define     TRGR                  BIT4                      //TRGR on P1.4, output (1)
+//#define     ECHO                  BIT5                      //ECHO on P1.5, input (0)
+
+void configureClock(void);
+//void configureSensorChannels(void);
+void configurePins(void);
+
+unsigned int hour = 6;
+unsigned int min = 29;
+unsigned int sec = 0;
+unsigned int ms = 0;
+//unsigned int TXByte;
+//unsigned int timeMeasured = 0;
+
+void main(void)
+{
+    WDTCTL = WDTPW + WDTHOLD;                 // Stop WDT
+    configureClock();
+    configurePins();
+    while(1){
+        if(ms == 1000){
+            ms = 0;
+	    sec += 1;
+        }
+        if(sec == 60){
+            sec = 0;
+            min += 1;
+        }
+        if(min == 60){
+            min = 0;
+            hour +=1;
+        }
+        if(hour == 24){
+            hour = 0;
+        }
+
+    }
+}
+
+/*
+  while(1) {
+    P1OUT |= TRGR;
+    __delay_cycles(10);  //1MHz ~ 1 000 000 cycles/s, so this is ~ 10us
+    P1OUT &= ~TRGR;
+    // Stuff
+    while(P1IN == 6);
+    TAR = 0;
+    while(P1IN != 6);
+    timeMeasured = TAR;
+    TXByte = timeMeasured / 58;
+    while (! (IFG2 & UCA0TXIFG)); // wait for TX buffer to be ready for new data
+    UCA0TXBUF = TXByte;
+    __delay_cycles(100000);
+    }
+*/
+
+/*
+void configureSensorChannels(void) {
+    P1DIR |= TRGR;          // setting up output direction (1) on trigger
+    P1DIR &= ~ECHO;
+}
+*/
+
+void configureClock(void){
+    /* next three lines to use internal calibrated 1MHz clock: */
+    BCSCTL1 = CALBC1_1MHZ;                    // Set range
+    DCOCTL = CALDCO_1MHZ;
+    BCSCTL2 &= ~(DIVS_3);                     // SMCLK = DCO = 1MHz
+    TACTL = TACLR;				//Clear timer A0
+    TA1CTL = 0;					//Clear timer A1
+    TACCR0 = 1000;				//Set period for A0
+    TA1CCR0 = 1000;				//Set period for A1
+    TACTL = TASSEL_2 + MC_1;			//Set path for A0 to system clock up mode
+    TA1CTL = TASSEL_2 + MC_1;			//Set path for A1 to system clock up mode
+    TACCTL1 = CCIE;				//Set interrupt on A0
+    TA1CCTL1 = CCIE;				//Set interrupt on A1
+    TAR = 0;
+    TA1R = 0;
+    
+}
+
+void configurePins(void){
+    P1DIR |= (EN12 + A1EN + A2EN + BEEP);
+    P1OUT = ;
+}
